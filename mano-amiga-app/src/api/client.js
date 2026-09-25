@@ -1,5 +1,22 @@
 import axios from 'axios';
+import Constants from 'expo-constants';
 import { guardarRefreshToken, leerRefreshToken, borrarRefreshToken } from '../services/secureStorage';
+
+/**
+ * URL de la API:
+ *  - Si EXPO_PUBLIC_API_URL está definida, se usa esa (producción, o si querés forzar una).
+ *  - Si no, en desarrollo se arma sola con la IP de la compu que corre "npx expo start"
+ *    (la misma que aparece debajo del QR: exp://ESTA_IP:8081) + el puerto del front-service.
+ *    Así no hay que tocar el .env cada vez que cambiás de red.
+ */
+function resolverApiUrl() {
+  const fija = process.env.EXPO_PUBLIC_API_URL;
+  if (fija) return fija;
+  const puerto = process.env.EXPO_PUBLIC_API_PORT || '8090';
+  const hostUri = Constants.expoConfig?.hostUri; // ej: "172.20.10.3:8081"
+  const host = hostUri ? hostUri.split(':')[0] : 'localhost';
+  return `http://${host}:${puerto}/api/v1`;
+}
 
 /**
  * Cliente HTTP único de la app (6.3: las pantallas nunca hacen pedidos directamente).
@@ -7,9 +24,9 @@ import { guardarRefreshToken, leerRefreshToken, borrarRefreshToken } from '../se
  * - Si la API responde 401, intenta renovar la sesión UNA vez con /auth/refresh y repite el pedido.
  * - Si no puede renovar, avisa al AuthContext para cerrar la sesión.
  *
- * La URL sale de EXPO_PUBLIC_API_URL (archivo .env de la app). No hay secretos en la app.
+ * No hay secretos en la app.
  */
-export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+export const API_URL = resolverApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,

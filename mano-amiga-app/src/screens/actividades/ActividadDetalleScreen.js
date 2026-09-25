@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Pantalla from '../../components/Pantalla';
-import { Boton, Cargando, Chip, MensajeError, TextoSuave, Titulo } from '../../components/ui';
+import { Aparecer, BarraProgreso, Boton, Cargando, Chip, MensajeError, Pastilla, Tarjeta } from '../../components/ui';
+import { FigurasEncabezado, Flotante } from '../../components/Decoraciones';
 import { useCarga } from '../../hooks/useCarga';
 import { useAuth } from '../../hooks/useAuth';
 import { obtenerActividad } from '../../api/actividades';
 import { inscribirme } from '../../api/inscripciones';
 import { mensajeDeError } from '../../api/client';
-import { colores, espacio } from '../../constants/tema';
+import { colores, emojiEtiqueta, espacio, familiaPara, fuentes } from '../../constants/tema';
 import { rangoFechas } from '../../utils/formato';
 
 export default function ActividadDetalleScreen({ route, navigation }) {
@@ -20,7 +22,7 @@ export default function ActividadDetalleScreen({ route, navigation }) {
     setEnviando(true);
     try {
       await inscribirme(id);
-      Alert.alert('¡Listo!', 'Te inscribiste. El coordinador tiene que aceptar tu inscripción; lo vas a ver en "Mis inscripciones".');
+      Alert.alert('¡Genial! 🎉', 'Te inscribiste. El coordinador tiene que aceptar tu inscripción; lo vas a ver en "Inscripciones".');
       recargar();
     } catch (e) {
       Alert.alert('No se pudo inscribir', mensajeDeError(e));
@@ -33,30 +35,66 @@ export default function ActividadDetalleScreen({ route, navigation }) {
   if (error) return <MensajeError texto={error} onReintentar={recargar} />;
   if (!act) return null;
 
+  const f = familiaPara(act.id);
+  const ocupados = act.cupo - act.cuposLibres;
+
   return (
     <Pantalla>
-      <Titulo>{act.titulo}</Titulo>
-      <TextoSuave>{act.organizacion?.nombre}</TextoSuave>
-      <View style={styles.bloque}>
-        <Text style={styles.dato}>🗓 {rangoFechas(act.fechaInicio, act.fechaFin)}</Text>
-        {act.direccion ? <Text style={styles.dato}>📍 {act.direccion}</Text> : null}
-        <Text style={styles.dato}>
-          👥 {act.cuposLibres} lugares libres de {act.cupo}
-        </Text>
-      </View>
-      <Text style={styles.descripcion}>{act.descripcion}</Text>
-      <View style={styles.etiquetas}>
-        {act.etiquetas.map((e) => (
-          <Chip key={e.id} texto={e.nombre} />
-        ))}
-      </View>
+      <Aparecer>
+        <LinearGradient colors={[f.base, f.oscuro]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.portada}>
+          <FigurasEncabezado variante={2} />
+          <Flotante distancia={8}>
+            <Text style={styles.portadaEmoji}>{emojiEtiqueta(act.etiquetas[0]?.nombre)}</Text>
+          </Flotante>
+          <Text style={[styles.titulo, { color: f.texto }]}>{act.titulo}</Text>
+          <Text style={[styles.org, { color: f.texto }]}>🏢 {act.organizacion?.nombre}</Text>
+        </LinearGradient>
+      </Aparecer>
+
+      <Aparecer indice={1}>
+        <View style={styles.pastillas}>
+          <Pastilla emoji="🗓" texto={rangoFechas(act.fechaInicio, act.fechaFin)} clave="fecha" />
+          {act.direccion ? <Pastilla emoji="📍" texto={act.direccion} clave="lugar" /> : null}
+        </View>
+      </Aparecer>
+
+      <Aparecer indice={2}>
+        <Tarjeta>
+          <View style={styles.cuposFila}>
+            <Text style={styles.cuposTitulo}>👥 Lugares</Text>
+            <Text style={styles.cuposNumero}>
+              {act.cuposLibres} libres de {act.cupo}
+            </Text>
+          </View>
+          <BarraProgreso valor={ocupados} total={act.cupo} color={act.cuposLibres <= 3 ? colores.coral : colores.menta} />
+        </Tarjeta>
+      </Aparecer>
+
+      <Aparecer indice={3}>
+        <Tarjeta acento={f.base}>
+          <Text style={styles.seccion}>De qué se trata</Text>
+          <Text style={styles.descripcion}>{act.descripcion}</Text>
+          <View style={styles.etiquetas}>
+            {act.etiquetas.map((e) => (
+              <Chip key={e.id} texto={e.nombre} clave={e.nombre} emoji={emojiEtiqueta(e.nombre)} />
+            ))}
+          </View>
+        </Tarjeta>
+      </Aparecer>
 
       {usuario.rol === 'voluntario' ? (
-        <Boton titulo={act.cuposLibres > 0 ? 'Inscribirme' : 'Sin cupos'} onPress={inscribir} cargando={enviando} deshabilitado={act.cuposLibres === 0} />
+        <Boton
+          titulo={act.cuposLibres > 0 ? '¡Me sumo!' : 'Sin cupos'}
+          icono={act.cuposLibres > 0 ? '🙋' : '😢'}
+          onPress={inscribir}
+          cargando={enviando}
+          deshabilitado={act.cuposLibres === 0}
+        />
       ) : null}
       <Boton
-        titulo="Ver comunidad del proyecto"
-        variante="borde"
+        titulo="Ver la comunidad"
+        icono="💬"
+        variante="secundario"
         onPress={() => navigation.navigate('Feed', { proyectoId: act.id, titulo: act.titulo, organizacionId: act.organizacionId })}
       />
     </Pantalla>
@@ -64,8 +102,15 @@ export default function ActividadDetalleScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  bloque: { marginVertical: espacio.m, gap: espacio.xs },
-  dato: { fontSize: 15, color: colores.texto },
-  descripcion: { fontSize: 15, lineHeight: 22, color: colores.texto, marginBottom: espacio.m },
-  etiquetas: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: espacio.m },
+  portada: { borderRadius: 30, padding: espacio.l, paddingTop: espacio.xl, overflow: 'hidden', marginBottom: espacio.m, minHeight: 190, justifyContent: 'flex-end' },
+  portadaEmoji: { fontSize: 52, marginBottom: espacio.s },
+  titulo: { fontFamily: fuentes.titulo, fontSize: 28, lineHeight: 32 },
+  org: { fontFamily: fuentes.textoMedio, fontSize: 15, marginTop: 4, opacity: 0.95 },
+  pastillas: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: espacio.xs },
+  cuposFila: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: espacio.s },
+  cuposTitulo: { fontFamily: fuentes.tituloMedio, fontSize: 17, color: colores.tinta },
+  cuposNumero: { fontFamily: fuentes.negrita, color: colores.mentaOscuro },
+  seccion: { fontFamily: fuentes.tituloMedio, fontSize: 18, color: colores.tinta, marginBottom: 6 },
+  descripcion: { fontFamily: fuentes.texto, fontSize: 15, lineHeight: 23, color: colores.tinta, marginBottom: espacio.m },
+  etiquetas: { flexDirection: 'row', flexWrap: 'wrap' },
 });

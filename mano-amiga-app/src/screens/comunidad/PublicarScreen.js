@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Pantalla from '../../components/Pantalla';
-import { Boton, Campo, Chip, MensajeError, TextoSuave, Titulo } from '../../components/ui';
+import { Boton, Campo, Chip, MensajeError, Tarjeta, TextoSuave, Titulo } from '../../components/ui';
 import { publicar } from '../../api/comunidad';
 import { mensajeDeError } from '../../api/client';
 
@@ -29,13 +29,22 @@ export default function PublicarScreen({ route, navigation }) {
     <Pantalla>
       <Titulo>{titulo}</Titulo>
       <MensajeError texto={error} />
-      <View style={styles.tipos}>
-        <Chip texto="Publicación" activo={tipo === 'post'} onPress={() => setTipo('post')} />
-        <Chip texto="📣 Convocatoria express" activo={tipo === 'convocatoria'} onPress={() => setTipo('convocatoria')} />
-      </View>
-      <Campo etiqueta="Contenido" value={contenido} onChangeText={setContenido} multiline maxLength={2000} />
-      <TextoSuave>{contenido.length}/2000 · Es público: no incluyas datos personales de voluntarios.</TextoSuave>
-      <Boton titulo="Publicar" onPress={enviar} cargando={enviando} />
+      <Tarjeta>
+        <View style={styles.tipos}>
+          <Chip texto="Novedad" emoji="💬" clave="novedad-azul" activo={tipo === 'post'} onPress={() => setTipo('post')} />
+          <Chip texto="Convocatoria express" emoji="⚡" clave="convocatoria" activo={tipo === 'convocatoria'} onPress={() => setTipo('convocatoria')} />
+        </View>
+        <Campo
+          etiqueta="¿Qué querés contar?"
+          value={contenido}
+          onChangeText={setContenido}
+          multiline
+          maxLength={2000}
+          placeholder={tipo === 'convocatoria' ? '¡Necesitamos 3 personas más para el sábado!' : 'Gracias a todos los que vinieron hoy 💛'}
+        />
+        <TextoSuave>{contenido.length}/2000 · Es público: no incluyas datos personales de voluntarios.</TextoSuave>
+        <Boton titulo="Publicar" icono="🚀" onPress={enviar} cargando={enviando} estilo={{ marginTop: 12 }} />
+      </Tarjeta>
     </Pantalla>
   );
 }

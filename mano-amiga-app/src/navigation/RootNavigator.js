@@ -1,10 +1,10 @@
-import { Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../hooks/useAuth';
 import { Cargando } from '../components/ui';
-import { colores } from '../constants/tema';
+import BarraPestanas from '../components/BarraPestanas';
+import { colores, fuentes } from '../constants/tema';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegistroScreen from '../screens/auth/RegistroScreen';
@@ -26,15 +26,28 @@ import AdminInicioScreen from '../screens/admin/AdminInicioScreen';
 const Stack = createNativeStackNavigator();
 const Tabs = createBottomTabNavigator();
 
-const opcionesStack = { headerTintColor: colores.primario, headerBackButtonDisplayMode: 'minimal' };
-const icono = (emoji) => () => <Text style={{ fontSize: 20 }}>{emoji}</Text>;
+// Encabezados de las pantallas internas: fondo crema, sin línea, título con la tipografía de la marca.
+const opcionesStack = {
+  headerTintColor: colores.tinta,
+  headerBackButtonDisplayMode: 'minimal',
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: colores.crema },
+  headerTitleStyle: { fontFamily: fuentes.titulo, fontSize: 20, color: colores.tinta },
+  contentStyle: { backgroundColor: colores.crema },
+};
+
+// Las pestañas no muestran encabezado: cada pantalla tiene su propio "Hero" de color.
+const opcionesTabs = { headerShown: false, sceneStyle: { backgroundColor: colores.crema } };
+const barra = (props) => <BarraPestanas {...props} />;
+
+const temaNavegacion = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: colores.crema, primary: colores.coral, text: colores.tinta } };
 
 // ---------- Sin sesión ----------
 function AuthStack() {
   return (
     <Stack.Navigator screenOptions={opcionesStack}>
       <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="Registro" component={RegistroScreen} options={{ title: 'Crear cuenta' }} />
+      <Stack.Screen name="Registro" component={RegistroScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
@@ -42,11 +55,11 @@ function AuthStack() {
 // ---------- Voluntario ----------
 function VoluntarioTabs() {
   return (
-    <Tabs.Navigator screenOptions={{ tabBarActiveTintColor: colores.primario, headerTintColor: colores.primario }}>
-      <Tabs.Screen name="Actividades" component={ActividadesScreen} options={{ tabBarIcon: icono('🤝') }} />
-      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarIcon: icono('📦') }} />
-      <Tabs.Screen name="MisInscripciones" component={MisInscripcionesScreen} options={{ title: 'Mis inscripciones', tabBarIcon: icono('📋') }} />
-      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ tabBarIcon: icono('👤') }} />
+    <Tabs.Navigator screenOptions={opcionesTabs} tabBar={barra}>
+      <Tabs.Screen name="Actividades" component={ActividadesScreen} options={{ title: 'Actividades', tabBarEmoji: '🤝' }} />
+      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarEmoji: '📦' }} />
+      <Tabs.Screen name="MisInscripciones" component={MisInscripcionesScreen} options={{ title: 'Inscripciones', tabBarEmoji: '📋' }} />
+      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarEmoji: '👤' }} />
     </Tabs.Navigator>
   );
 }
@@ -54,10 +67,10 @@ function VoluntarioTabs() {
 // ---------- Coordinador ----------
 function CoordinadorTabs() {
   return (
-    <Tabs.Navigator screenOptions={{ tabBarActiveTintColor: colores.primario, headerTintColor: colores.primario }}>
-      <Tabs.Screen name="MisActividades" component={MisActividadesScreen} options={{ title: 'Mis actividades', tabBarIcon: icono('🗂') }} />
-      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarIcon: icono('📦') }} />
-      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ tabBarIcon: icono('👤') }} />
+    <Tabs.Navigator screenOptions={opcionesTabs} tabBar={barra}>
+      <Tabs.Screen name="MisActividades" component={MisActividadesScreen} options={{ title: 'Mis actividades', tabBarEmoji: '🗂' }} />
+      <Tabs.Screen name="Campanas" component={CampanasScreen} options={{ title: 'Campañas', tabBarEmoji: '📦' }} />
+      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarEmoji: '👤' }} />
     </Tabs.Navigator>
   );
 }
@@ -65,9 +78,9 @@ function CoordinadorTabs() {
 // ---------- Administrador (Sprint 2) ----------
 function AdminTabs() {
   return (
-    <Tabs.Navigator screenOptions={{ tabBarActiveTintColor: colores.primario, headerTintColor: colores.primario }}>
-      <Tabs.Screen name="Admin" component={AdminInicioScreen} options={{ title: 'Administración', tabBarIcon: icono('🛠') }} />
-      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ tabBarIcon: icono('👤') }} />
+    <Tabs.Navigator screenOptions={opcionesTabs} tabBar={barra}>
+      <Tabs.Screen name="Admin" component={AdminInicioScreen} options={{ title: 'Administración', tabBarEmoji: '🛠' }} />
+      <Tabs.Screen name="Perfil" component={PerfilScreen} options={{ title: 'Perfil', tabBarEmoji: '👤' }} />
     </Tabs.Navigator>
   );
 }
@@ -99,5 +112,5 @@ function AppStack({ rol }) {
 export default function RootNavigator() {
   const { usuario, cargando } = useAuth();
   if (cargando) return <Cargando />;
-  return <NavigationContainer>{usuario ? <AppStack rol={usuario.rol} /> : <AuthStack />}</NavigationContainer>;
+  return <NavigationContainer theme={temaNavegacion}>{usuario ? <AppStack rol={usuario.rol} /> : <AuthStack />}</NavigationContainer>;
 }

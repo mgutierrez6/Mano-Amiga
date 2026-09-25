@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { colores, espacio, radio } from '../constants/tema';
+import { colores, espacio, fuentes } from '../constants/tema';
 import { fechaHora } from '../utils/formato';
 
 /**
@@ -28,7 +28,7 @@ export default function FechaHoraInput({ etiqueta, valor, onChange }) {
           });
         },
       });
-    } else {
+    } else if (Platform.OS === 'ios') {
       setMostrarIOS((v) => !v);
     }
   };
@@ -36,11 +36,12 @@ export default function FechaHoraInput({ etiqueta, valor, onChange }) {
   return (
     <View style={styles.campo}>
       <Text style={styles.etiqueta}>{etiqueta}</Text>
-      <Pressable onPress={abrir} style={styles.input}>
+      <Pressable onPress={abrir} style={({ pressed }) => [styles.input, pressed && { borderColor: colores.coral }]}>
+        <Text style={styles.icono}>📅</Text>
         <Text style={styles.valor}>{fechaHora(valor)}</Text>
       </Pressable>
       {Platform.OS === 'ios' && mostrarIOS ? (
-        <DateTimePicker value={valor} mode="datetime" display="inline" onChange={(e, fecha) => fecha && onChange(fecha)} />
+        <DateTimePicker value={valor} mode="datetime" display="inline" onChange={(e, fecha) => fecha && onChange(fecha)} accentColor={colores.coral} />
       ) : null}
     </View>
   );
@@ -48,7 +49,17 @@ export default function FechaHoraInput({ etiqueta, valor, onChange }) {
 
 const styles = StyleSheet.create({
   campo: { marginBottom: espacio.m },
-  etiqueta: { fontSize: 14, color: colores.textoSuave, marginBottom: espacio.xs },
-  input: { borderWidth: 1, borderColor: colores.borde, borderRadius: radio, padding: espacio.m, backgroundColor: colores.blanco },
-  valor: { fontSize: 16, color: colores.texto },
+  etiqueta: { fontFamily: fuentes.negrita, fontSize: 13, color: colores.tintaSuave, marginBottom: 6, marginLeft: 4 },
+  input: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colores.borde,
+    borderRadius: 16,
+    paddingHorizontal: espacio.m,
+    paddingVertical: 12,
+    backgroundColor: colores.blanco,
+  },
+  icono: { fontSize: 18, marginRight: 8 },
+  valor: { fontFamily: fuentes.textoMedio, fontSize: 16, color: colores.tinta },
 });
